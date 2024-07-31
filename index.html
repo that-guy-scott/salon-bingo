@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetSmart Grooming Salon Bingo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 210mm;
+            width: 100%;
+        }
+
+        .bingo-card {
+            width: 100%;
+            padding: 10mm;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: white;
+        }
+
+        .logo {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+
+        .bingo-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-family: 'Bungee', cursive;
+            font-size: 16px;
+            background-color: white;
+            color: #006997;
+            border: 2px solid #006997;
+            border-radius: 8px;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        .bingo-cell.free-space {
+            background-color: #fde68a;
+            color: #92400e;
+            font-size: 20px;
+        }
+
+        .scissors {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+
+        .buttons, .form {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn, .form input[type="submit"] {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #006997;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover, .form input[type="submit"]:hover {
+            background-color: #006997;
+        }
+
+        .form input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #006997;
+            border-radius: 5px;
+            flex-grow: 1;
+        }
+
+        .items-list {
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border: 1px solid #006997;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .remove-btn {
+            color: #ef4444;
+            border: 1px solid #ef4444;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s;
+            padding-bottom: 3px;
+        }
+
+        .remove-btn:hover {
+
+            background-color: #ef4444;
+            color: white;
+
+
+        }
+
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .bingo-card {
+                page-break-after: always;
+            }
+
+            .buttons, .form, .items-list {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="bingo-card">
+        <img src="https://www.petsmart.com/on/demandware.static/Sites-PetSmart-Site/-/default/dw4ebd18e2/images/petsmart-logo.png" alt="PetSmart Logo" class="logo">
+        <div id="bingo-grid" class="bingo-grid"></div>
+    </div>
+    <div id="items-list" class="items-list"></div>
+    <form id="add-item-form" class="form">
+        <input type="text" id="new-item" placeholder="Enter new bingo item" required>
+        <input type="submit" value="Add Item">
+    </form>
+    <div class="buttons">
+        <button id="randomize-btn" class="btn">Randomize</button>
+        <button id="print-btn" class="btn">Print</button>
+    </div>
+</div>
+<script>
+
+    class BingoCard {
+
+        constructor() {
+            this.bingoCardContents = this.loadFromLocalStorage('bingoCardContents') || [
+                '5 Summer Special Plus ($35)',
+                '3 Deluxe',
+                '60% Add-on Rate',
+                '3 Luxury',
+                'Find the Rubber Duckie',
+                '3 Very Berry Facial Shampoos',
+                'Write a play up card for everyone',
+                '5 Walk-ins of any kind',
+                'Nose & Paw Balm',
+                'Happy Hoodie',
+                'Control Overbook 1 dog',
+                '5 Summer Special Any',
+                'Tell Steve his hair looks pretty',
+                'Deep Coat Conditioner',
+                '3 Earth Bath',
+                '3 Teeth Brushing',
+                '10 Nail Grinds',
+                'Bathe a dog for someone',
+                '5 Furminators',
+                'Sell a bandanna',
+                '3 Essentials',
+                '70%+ add-on rate',
+                '5 Summer Special Hemp2',
+                'Premium Shampoo',
+                'Compliment a customer'
+            ];
+            this.bingoCardState = this.loadFromLocalStorage('bingoCardState') || this.generateNewCardState();
+            this.gridElement = document.getElementById('bingo-grid');
+            this.itemsListElement = document.getElementById('items-list');
+            this.saveToLocalStorage('bingoCardContents', this.bingoCardContents);
+            this.saveToLocalStorage('bingoCardState', this.bingoCardState);
+            this.renderItemsList();
+            this.renderBingoCard();
+        }
+
+        loadFromLocalStorage(key) {
+            const storedData = localStorage.getItem(key);
+            return storedData ? JSON.parse(storedData) : null;
+        }
+
+        saveToLocalStorage(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+
+        shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        generateNewCardState() {
+            const shuffledContents = [...this.bingoCardContents];
+            this.shuffleArray(shuffledContents);
+            const newState = shuffledContents.slice(0, 24);
+            newState.splice(12, 0, 'FREE SPACE');
+            return newState;
+        }
+
+        renderBingoCard() {
+            this.gridElement.innerHTML = '';
+            this.bingoCardState.forEach((content, index) => {
+                const cell = document.createElement('div');
+                cell.classList.add('bingo-cell');
+
+                if (index === 12) {
+                    cell.classList.add('free-space');
+                    cell.innerHTML = `
+                    <svg class="scissors" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" />
+                    </svg>
+                    <span>FREE SPACE</span>
+                `;
+                } else {
+                    cell.textContent = content;
+                }
+
+                this.gridElement.appendChild(cell);
+            });
+        }
+
+        createNewBingoCard() {
+            this.bingoCardState = this.generateNewCardState();
+            this.saveToLocalStorage('bingoCardState', this.bingoCardState);
+            this.renderBingoCard();
+        }
+
+        addItem(item) {
+            // this.bingoCardContents.push(item);
+            this.bingoCardContents.unshift(item);
+            this.saveToLocalStorage('bingoCardContents', this.bingoCardContents);
+            this.renderItemsList();
+        }
+
+        removeItem(index) {
+            this.bingoCardContents.splice(index, 1);
+            this.saveToLocalStorage('bingoCardContents', this.bingoCardContents);
+            this.renderItemsList();
+        }
+
+        renderItemsList() {
+            this.itemsListElement.innerHTML = '';
+            this.bingoCardContents.forEach((item, index) => {
+                const itemElement = document.createElement('div');
+                itemElement.classList.add('item');
+                itemElement.innerHTML = `
+                <span>${item}</span>
+                <button class="remove-btn" data-index="${index}">-</button>
+            `;
+                this.itemsListElement.appendChild(itemElement);
+            });
+
+            const removeButtons = this.itemsListElement.querySelectorAll('.remove-btn');
+            removeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const index = parseInt(button.getAttribute('data-index'));
+                    this.removeItem(index);
+                });
+            });
+        }
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const bingoCard = new BingoCard();
+
+        const randomizeBtn = document.getElementById('randomize-btn');
+        randomizeBtn.addEventListener('click', () => bingoCard.createNewBingoCard());
+
+        const printBtn = document.getElementById('print-btn');
+        printBtn.addEventListener('click', () => window.print());
+
+        const addItemForm = document.getElementById('add-item-form');
+        addItemForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newItemInput = document.getElementById('new-item');
+            const newItem = newItemInput.value.trim();
+            if (newItem) {
+                bingoCard.addItem(newItem);
+                newItemInput.value = '';
+            }
+        });
+
+    });
+
+</script>
+</body>
+</html>
