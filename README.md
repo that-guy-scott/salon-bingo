@@ -8,6 +8,10 @@ This application is a fun and interactive bingo game designed for PetSmart salon
 - Print bingo cards for physical use
 - Custom-themed with PetSmart branding
 
+<p align="center">
+  <img src="/img.png" alt="screenshot">
+</p>
+
 ## Usage
 1. Open the `index.html` file in a web browser.
 2. Click the "Randomize" button to generate a new bingo card.
